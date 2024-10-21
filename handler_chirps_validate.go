@@ -3,16 +3,17 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 )
 
-// validates a chirp's length
+// validates a chirp (checks for length and censors bad words)
 func handlerValidateChirp(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Body string `json:"body"`
 	}
 
 	type response struct {
-		Valid bool `json:"valid"`
+		CleanedBody string `json:"cleaned_body"`
 	}
 
 	var params parameters
@@ -32,7 +33,30 @@ func handlerValidateChirp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	cleaned := cleanChirp(params.Body)
+
 	respondWithJson(w, http.StatusOK, response{
-		Valid: true,
+		CleanedBody: cleaned,
 	})
+}
+
+// censors bad words
+func cleanChirp(body string) string {
+	badWords := map[string]bool{
+		"kerfuffle": true,
+		"sharbert":  true,
+		"fornax":    true,
+	}
+
+	words := strings.Fields(body)
+	const stars = "****"
+	for i, word := range words {
+		lowered := strings.ToLower(word)
+		if badWords[lowered] {
+			words[i] = stars
+		}
+	}
+
+	cleaned := strings.Join(words, " ")
+	return cleaned
 }
