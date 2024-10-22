@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// validates a chirp (checks for length and censors bad words)
+// handlerValidateChirp checks for chirp length and censors bad words.
 func handlerValidateChirp(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Body string `json:"body"`
@@ -40,7 +40,7 @@ func handlerValidateChirp(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// censors bad words
+// cleanChirp censors bad words.
 func cleanChirp(body string) string {
 	badWords := map[string]bool{
 		"kerfuffle": true,

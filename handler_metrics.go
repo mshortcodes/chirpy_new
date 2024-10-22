@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-// increments fileServerHits when /app is visited
+// middlewareMetricsInc increments fileServerHits when /app is visited.
 func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cfg.fileServerHits.Add(1)
@@ -13,7 +13,7 @@ func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
 	})
 }
 
-// writes fileServerHits to the response
+// handlerMetrics writes fileServerHits to the response.
 func (cfg *apiConfig) handlerMetrics(w http.ResponseWriter, r *http.Request) {
 	msg := fmt.Sprintf(`
 <html>
@@ -27,7 +27,7 @@ func (cfg *apiConfig) handlerMetrics(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(msg))
 }
 
-// resets fileServerHits
+// handlerReset resets fileServerHits.
 func (cfg *apiConfig) handlerReset(w http.ResponseWriter, r *http.Request) {
 	cfg.fileServerHits.Store(0)
 	w.WriteHeader(http.StatusOK)

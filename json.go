@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-// marshals and writes the response
+// respondWithJson is a helper function that marshals and writes the response.
 func respondWithJson(w http.ResponseWriter, code int, payload any) {
 	response, err := json.Marshal(payload)
 	if err != nil {
@@ -20,7 +20,7 @@ func respondWithJson(w http.ResponseWriter, code int, payload any) {
 	w.Write(response)
 }
 
-// logs error and calls respondWithJSON
+// respondWithError is a helper function that logs an error and calls respondWithJSON.
 func respondWithError(w http.ResponseWriter, code int, msg string, err error) {
 	if err != nil {
 		log.Println(err)
