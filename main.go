@@ -13,9 +13,12 @@ import (
 	"github.com/mshortcodes/chirpy_new/internal/database"
 )
 
+// apiConfig holds state for fileServerHits, a reference for interacting with the database,
+// and the PLATFORM environtment variable
 type apiConfig struct {
 	fileServerHits atomic.Int32
 	dbQueries      *database.Queries
+	platform       string
 }
 
 func main() {
@@ -32,14 +35,21 @@ func main() {
 		log.Fatal("DB_URL must be set")
 	}
 
-	db, err := sql.Open("postgres", dbURL)
+	platform := os.Getenv("PLATFORM")
+	if platform == "" {
+		log.Fatal("PLATFORM must be set")
+	}
+
+	dbConn, err := sql.Open("postgres", dbURL)
 	if err != nil {
 		log.Fatalf("Error opening database: %s", err)
 	}
+	defer dbConn.Close()
 
 	apiCfg := apiConfig{
 		fileServerHits: atomic.Int32{},
-		dbQueries:      database.New(db),
+		dbQueries:      database.New(dbConn),
+		platform:       platform,
 	}
 
 	mux := http.NewServeMux()
@@ -47,8 +57,9 @@ func main() {
 	mux.HandleFunc("GET /admin/metrics", apiCfg.handlerMetrics)
 	mux.HandleFunc("POST /admin/reset", apiCfg.handlerReset)
 
-	mux.HandleFunc("POST /api/validate_chirp", handlerValidateChirp)
 	mux.HandleFunc("GET /api/healthz", handlerReadiness)
+	mux.HandleFunc("POST /api/validate_chirp", handlerValidateChirp)
+	mux.HandleFunc("POST /api/users", apiCfg.handlerCreateUser)
 
 	srv := &http.Server{
 		Handler: mux,
