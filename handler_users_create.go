@@ -16,9 +16,9 @@ type User struct {
 	Email     string    `json:"email"`
 }
 
-// handlerCreateUser creates a User in the database.
+// handlerUsersCreate creates a User in the database.
 // It accepts an email and returns all User data.
-func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) {
+func (cfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Email string `json:"email"`
 	}

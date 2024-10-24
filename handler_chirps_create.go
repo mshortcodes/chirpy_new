@@ -18,9 +18,9 @@ type Chirp struct {
 	UserID    uuid.UUID `json:"user_id"`
 }
 
-// handlerCreateChirp creates a chirp and writes it to the database.
+// handlerChirpsCreate creates a chirp and writes it to the database.
 // It validates the chirp length and censors any bad words.
-func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request) {
+func (cfg *apiConfig) handlerChirpsCreate(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Body   string    `json:"body"`
 		UserID uuid.UUID `json:"user_id"`
