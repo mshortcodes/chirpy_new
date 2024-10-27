@@ -51,7 +51,7 @@ func MakeJWT(userID uuid.UUID, tokenSecret string, expiresIn time.Duration) (str
 	return signedToken, nil
 }
 
-// ValidateJWT compares two tokens' signatures to validate them.
+// ValidateJWT compares two tokens' signatures to validate them and returns the user id.
 func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &jwt.RegisteredClaims{}, func(t *jwt.Token) (interface{}, error) {
 		return []byte(tokenSecret), nil
