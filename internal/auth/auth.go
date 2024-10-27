@@ -1,8 +1,14 @@
 package auth
 
 import (
+	"errors"
 	"fmt"
+	"net/http"
+	"strings"
+	"time"
 
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -24,4 +30,57 @@ func CheckPasswordHash(password, hash string) error {
 	}
 
 	return nil
+}
+
+// MakeJWT generates a token and signs it with the passed in secret and SHA-256.
+func MakeJWT(userID uuid.UUID, tokenSecret string, expiresIn time.Duration) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
+		Issuer:    "chirpy",
+		IssuedAt:  jwt.NewNumericDate(time.Now().UTC()),
+		ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(expiresIn)),
+		Subject:   userID.String(),
+	})
+
+	signingKey := []byte(tokenSecret)
+	signedToken, err := token.SignedString(signingKey)
+	if err != nil {
+		return "", fmt.Errorf("couldn't sign token: %s", err)
+	}
+	return signedToken, nil
+}
+
+// ValidateJWT compares two tokens' signatures to validate them.
+func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &jwt.RegisteredClaims{}, func(t *jwt.Token) (interface{}, error) {
+		return []byte(tokenSecret), nil
+	})
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	userID, err := token.Claims.GetSubject()
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	id, err := uuid.Parse(userID)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("invalid user ID: %s", err)
+	}
+
+	return id, nil
+}
+
+func GetBearerToken(headers http.Header) (string, error) {
+	authHeader := headers.Get("Authorization")
+	if authHeader == "" {
+		return "", errors.New("no auth header included in request")
+	}
+
+	splitAuth := strings.Fields(authHeader)
+	if splitAuth[0] != "Bearer" || len(splitAuth) < 2 {
+		return "", errors.New("malformed authorization header")
+	}
+
+	return splitAuth[1], nil
 }
