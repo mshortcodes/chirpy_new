@@ -13,13 +13,13 @@ func (cfg *apiConfig) handlerRefresh(w http.ResponseWriter, r *http.Request) {
 		Token string `json:"token"`
 	}
 
-	token, err := auth.GetBearerToken(r.Header)
+	refreshToken, err := auth.GetBearerToken(r.Header)
 	if err != nil {
 		respondWithError(w, http.StatusUnauthorized, "auth token required", err)
 		return
 	}
 
-	user, err := cfg.dbQueries.GetUserFromRefreshToken(r.Context(), token)
+	user, err := cfg.dbQueries.GetUserFromRefreshToken(r.Context(), refreshToken)
 	if err != nil {
 		respondWithError(w, http.StatusUnauthorized, "couldn't get user for refresh token", err)
 		return
