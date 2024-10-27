@@ -9,8 +9,8 @@ import (
 	"github.com/mshortcodes/chirpy_new/internal/database"
 )
 
-// handlerUsersLogin validates a user's password and creates an access token (JWT) and refresh token.
-func (cfg *apiConfig) handlerUsersLogin(w http.ResponseWriter, r *http.Request) {
+// handlerLogin validates a user's password and creates an access token (JWT) and refresh token.
+func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
