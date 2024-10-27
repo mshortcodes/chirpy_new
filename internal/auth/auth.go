@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"net/http"
@@ -71,6 +73,7 @@ func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
 	return id, nil
 }
 
+// GetBearerToken extracts the token from the Authorization header.
 func GetBearerToken(headers http.Header) (string, error) {
 	authHeader := headers.Get("Authorization")
 	if authHeader == "" {
@@ -83,4 +86,16 @@ func GetBearerToken(headers http.Header) (string, error) {
 	}
 
 	return splitAuth[1], nil
+}
+
+// MakeRefreshToken generates a random 256 bit token encoded in hex.
+func MakeRefreshToken() (string, error) {
+	tokenBytes := make([]byte, 32)
+	_, err := rand.Read(tokenBytes)
+	if err != nil {
+		return "", fmt.Errorf("couldn't make refresh token: %s", err)
+	}
+
+	token := hex.EncodeToString(tokenBytes)
+	return token, nil
 }

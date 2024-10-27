@@ -6,19 +6,20 @@ import (
 	"time"
 
 	"github.com/mshortcodes/chirpy_new/internal/auth"
+	"github.com/mshortcodes/chirpy_new/internal/database"
 )
 
-// handlerUsersLogin validates a user's password and creates a JWT.
+// handlerUsersLogin validates a user's password and creates an access token (JWT) and refresh token.
 func (cfg *apiConfig) handlerUsersLogin(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
-		Email            string `json:"email"`
-		Password         string `json:"password"`
-		ExpiresInSeconds int    `json:"expires_in_seconds"`
+		Email    string `json:"email"`
+		Password string `json:"password"`
 	}
 
 	type response struct {
 		User
-		Token string `json:"token"`
+		Token        string `json:"token"`
+		RefreshToken string `json:"refresh_token"`
 	}
 
 	var params parameters
@@ -44,17 +45,25 @@ func (cfg *apiConfig) handlerUsersLogin(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	paramTime := time.Duration(params.ExpiresInSeconds) * time.Second
-	expirationTime := time.Hour
-	switch {
-	case paramTime > expirationTime, paramTime == 0:
-	default:
-		expirationTime = paramTime
-	}
-
-	token, err := auth.MakeJWT(user.ID, cfg.jwtSecret, expirationTime)
+	token, err := auth.MakeJWT(user.ID, cfg.jwtSecret, time.Hour)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "couldn't create access JWT", err)
+		return
+	}
+
+	refreshToken, err := auth.MakeRefreshToken()
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "couldn't create refresh token", err)
+		return
+	}
+
+	_, err = cfg.dbQueries.CreateRefreshToken(r.Context(), database.CreateRefreshTokenParams{
+		Token:     refreshToken,
+		UserID:    user.ID,
+		ExpiresAt: time.Now().UTC().Add(time.Hour * 24 * 60),
+	})
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "couldn't save refresh token", err)
 		return
 	}
 
@@ -65,6 +74,7 @@ func (cfg *apiConfig) handlerUsersLogin(w http.ResponseWriter, r *http.Request) 
 			UpdatedAt: user.UpdatedAt,
 			Email:     user.Email,
 		},
-		Token: token,
+		Token:        token,
+		RefreshToken: refreshToken,
 	})
 }
