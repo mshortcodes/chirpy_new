@@ -5,9 +5,10 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/mshortcodes/chirpy_new/internal/auth"
 )
 
-// handlerWebhooks upgrades the user to Chirpy Red based on the event.
+// handlerWebhooks upgrades the user to Chirpy Red if provided the correct API key and event.
 func (cfg *apiConfig) handlerWebhooks(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Event string `json:"event"`
@@ -16,11 +17,22 @@ func (cfg *apiConfig) handlerWebhooks(w http.ResponseWriter, r *http.Request) {
 		} `json:"data"`
 	}
 
+	apiKey, err := auth.GetAPIKey(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "malformed auth header", err)
+		return
+	}
+
+	if apiKey != cfg.polkaKey {
+		respondWithError(w, http.StatusUnauthorized, "invalid API key", err)
+		return
+	}
+
 	var params parameters
 	decoder := json.NewDecoder(r.Body)
 	defer r.Body.Close()
 
-	err := decoder.Decode(&params)
+	err = decoder.Decode(&params)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "couldn't decode parameters", err)
 		return

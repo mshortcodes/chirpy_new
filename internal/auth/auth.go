@@ -99,3 +99,18 @@ func MakeRefreshToken() (string, error) {
 	token := hex.EncodeToString(tokenBytes)
 	return token, nil
 }
+
+// GetAPIKey extracts the API key from the Authorization header.
+func GetAPIKey(headers http.Header) (string, error) {
+	authHeader := headers.Get("Authorization")
+	if authHeader == "" {
+		return "", errors.New("no auth header included in request")
+	}
+
+	splitAuth := strings.Fields(authHeader)
+	if splitAuth[0] != "ApiKey" || len(splitAuth) < 2 {
+		return "", errors.New("malformed authorization header")
+	}
+
+	return splitAuth[1], nil
+}
