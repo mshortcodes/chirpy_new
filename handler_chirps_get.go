@@ -31,15 +31,15 @@ func (cfg *apiConfig) handlerChirpsGet(w http.ResponseWriter, r *http.Request) {
 
 // handlerChirpsGetByID retrieves a single chirp by ID.
 func (cfg *apiConfig) handlerChirpsGetByID(w http.ResponseWriter, r *http.Request) {
-	chirpID := r.PathValue("chirpID")
+	chirpIDString := r.PathValue("chirpID")
 
-	uuid, err := uuid.Parse(chirpID)
+	chirpID, err := uuid.Parse(chirpIDString)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "Invalid chirp ID", err)
 		return
 	}
 
-	chirp, err := cfg.dbQueries.GetChirp(r.Context(), uuid)
+	chirp, err := cfg.dbQueries.GetChirp(r.Context(), chirpID)
 	if err != nil {
 		respondWithError(w, http.StatusNotFound, "chirp not found", err)
 		return
