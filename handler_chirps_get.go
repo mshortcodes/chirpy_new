@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// handlerChirpsGet retrieves all chirps in the database.
+// handlerChirpsGet retrieves all chirps in the database with optional author_id query parameter.
 func (cfg *apiConfig) handlerChirpsGet(w http.ResponseWriter, r *http.Request) {
 	dbChirps, err := cfg.dbQueries.GetChirps(r.Context())
 	if err != nil {
@@ -14,9 +14,23 @@ func (cfg *apiConfig) handlerChirpsGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	authorIDStr := r.URL.Query().Get("author_id")
+	var authorID uuid.UUID
+	if authorIDStr != "" {
+		authorID, err = uuid.Parse(authorIDStr)
+		if err != nil {
+			respondWithError(w, http.StatusBadRequest, "invalid author ID", err)
+			return
+		}
+	}
+
 	var chirps []Chirp
 
 	for _, dbChirp := range dbChirps {
+		if dbChirp.UserID != authorID {
+			continue
+		}
+
 		chirps = append(chirps, Chirp{
 			ID:        dbChirp.ID,
 			CreatedAt: dbChirp.CreatedAt,
