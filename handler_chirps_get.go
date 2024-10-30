@@ -2,11 +2,13 @@ package main
 
 import (
 	"net/http"
+	"sort"
 
 	"github.com/google/uuid"
 )
 
-// handlerChirpsGet retrieves all chirps in the database with optional author_id query parameter.
+// handlerChirpsGet retrieves all chirps in the database with optional sorting and author_id query parameters.
+// Defaults to ascending order.
 func (cfg *apiConfig) handlerChirpsGet(w http.ResponseWriter, r *http.Request) {
 	dbChirps, err := cfg.dbQueries.GetChirps(r.Context())
 	if err != nil {
@@ -24,10 +26,18 @@ func (cfg *apiConfig) handlerChirpsGet(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// SQL query GetChirps defaults to asc order.
+	sortDirection := r.URL.Query().Get("sort")
+	if sortDirection == "desc" {
+		sort.Slice(dbChirps, func(i, j int) bool {
+			return dbChirps[i].CreatedAt.After(dbChirps[j].CreatedAt)
+		})
+	}
+
 	var chirps []Chirp
 
 	for _, dbChirp := range dbChirps {
-		if dbChirp.UserID != authorID {
+		if dbChirp.UserID != authorID && authorID != uuid.Nil {
 			continue
 		}
 
